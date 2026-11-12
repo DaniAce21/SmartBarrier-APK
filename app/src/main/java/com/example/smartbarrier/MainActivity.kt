@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -15,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import java.net.HttpURLConnection
 import java.net.URL
+import android.os.SystemClock
 
 
 class MainActivity : ComponentActivity () {
@@ -36,6 +38,8 @@ fun SmartBarrierApp(){
     var estado by remember { mutableStateOf("CERRADA") }
     var vehiculo by remember { mutableStateOf(false) }
     var mensaje by remember { mutableStateOf("") }
+    var intentosFallidos by rememberSaveable { mutableIntStateOf(0)}
+    var bloqueoHasta by rememberSaveable { mutableLongStateOf(0L)}
 
     val historial = remember { mutableStateListOf<String>() }
     val scope = rememberCoroutineScope()
@@ -89,11 +93,34 @@ fun SmartBarrierApp(){
                 label = { Text("Contraseña") },
                 visualTransformation = PasswordVisualTransformation()
             )
-            Button(onClick = {
-                if (usuario == "admin" && clave == "1234") {
-                    sesion = true
-                    mensaje = ""
-                } else mensaje = "Datos incorrectos"
+            Button (onClick = {
+                val ahora = SystemClock.elapsedRealtime()
+
+                if (ahora < bloqueoHasta) {
+                    val segundos = (bloqueoHasta - ahora + 990) / 1000
+                    mensaje = "Accesos bloqueado. espera $segundos  segundos."
+                } else {
+                    if (bloqueoHasta != 0L) {
+                        bloqueoHasta = 0L
+                        intentosFallidos = 0
+                    }
+
+                    if (usuario == "admin" && clave == "1234") {
+                        sesion = true
+                        intentosFallidos = 0
+                        clave = ""
+                        mensaje = ""
+                    } else {
+                        intentosFallidos++
+
+                        if (intentosFallidos >= 3) {
+                            bloqueoHasta = ahora + 30_000L
+                            mensaje = "Acceso bloqueado hasta 30 segundos"
+                        } else {
+                            mensaje = "Credenciales incorrectas. Quedan ${3 - intentosFallidos} intentos"
+                        }
+                    }
+                }
             }) {
                 Text("Ingresar")
             }
