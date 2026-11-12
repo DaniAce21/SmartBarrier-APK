@@ -5,7 +5,7 @@ from http.server  import BaseHTTPRequestHandler, HTTPServer
 
 
 estado = "CERRADA"
-TOKEN = os.enviro.get("SMARTBARRIER_TOKEN")
+TOKEN = os.environ.get("SMARTBARRIER_TOKEN")
 
 if not TOKEN:
     raise SystemExit("ERROR : configura SMARTBARRIER_TOKEN antes de iniciar.")
