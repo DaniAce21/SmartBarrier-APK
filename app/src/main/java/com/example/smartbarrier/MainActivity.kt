@@ -40,6 +40,7 @@ fun SmartBarrierApp(){
     var mensaje by remember { mutableStateOf("") }
     var intentosFallidos by rememberSaveable { mutableIntStateOf(0)}
     var bloqueoHasta by rememberSaveable { mutableLongStateOf(0L)}
+    var token by remember { mutableStateOf("") }
 
     val historial = remember { mutableStateListOf<String>() }
     val scope = rememberCoroutineScope()
@@ -53,6 +54,7 @@ fun SmartBarrierApp(){
                     val url = URL("http://$ip:8000/$comando")
                     val conexion = url.openConnection(java.net.Proxy.NO_PROXY) as HttpURLConnection
                     conexion.requestMethod = "GET"
+                    conexion.setRequestProperty("Authorization", "Bearer $token")
                     conexion.connectTimeout = 5000
                     conexion.readTimeout = 5000
                     try {
@@ -128,10 +130,19 @@ fun SmartBarrierApp(){
             Text("Barrera: $estado")
 
             OutlinedTextField(
-                ip, { ip = it },
-                label = { Text("IP del computador") },
+                value = ip,
+                onValueChange = { ip = it },
+                label = { Text("IP del computador ") },
+            )
+
+            OutlinedTextField(
+                value = token,
+                onValueChange = { token = it },
+                label = { Text("Token de conexion") },
+                visualTransformation = PasswordVisualTransformation(),
                 singleLine = true
             )
+
 
             Button(onClick = { enviar("")}) {
                 Text("Consultar estado")
